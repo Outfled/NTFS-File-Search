@@ -1,6 +1,6 @@
 # NTFS-File-Search
 
-C++ project used for quickly querying all files/directories located on an NTFS volume/partition.
+Relatively lightweight app used for quickly querying files/directories located on an NTFS volume.
 It works by reading and parsing file records located in the MFT (master file table) 
 
 ### Designed for Windows Operating System
