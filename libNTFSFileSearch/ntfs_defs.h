@@ -166,6 +166,7 @@ typedef struct NTFS_BOOT_SECTOR
 	BYTE _55;
 };
 
+
 #define MFT_FILE_RECORD_MAGIC	0x454C4946
 
 /*
@@ -203,17 +204,6 @@ typedef struct MFT_DATARUN
 	INT64	Offset; /* LCN */
 }*PMFT_DATARUN;
 
-typedef union MFT_FILE_ID
-{
-	LONGLONG IndexNumber;
-
-	struct
-	{
-		LONGLONG MftRecordIndex : 48;
-		LONGLONG SequenceNumber : 16;
-	};
-}*PMFT_FILE_ID;
-
 /*
 * $MFT Standard Information Attribute
 * http://inform.pucp.edu.pe/~inf232/Ntfs/ntfs_doc_v0.5/attributes/standard_information.html
@@ -231,5 +221,16 @@ typedef struct MFT_STANDARD_INFORMATION_ATTRIBUTE_HDR
 	ULONGLONG	QuotaChange;
 	USN			Usn;
 }*PMFT_STANDARD_INFORMATION_ATTRIBUTE_HDR;
+
+typedef union MFT_FILE_ID
+{
+	LONGLONG IndexNumber;
+
+	struct
+	{
+		LONGLONG MftRecordIndex : 48;
+		LONGLONG SequenceNumber : 16;
+	};
+}*PMFT_FILE_ID;
 
 #endif //!_NTFS_DEFS_H_
