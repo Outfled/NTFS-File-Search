@@ -77,10 +77,10 @@ typedef struct MFT_NONRESIDENT_ATTRIBUTE_HDR
 	VCN_t					LastVCN;				// Last Virtual Cluster Number (VCN)
 	WORD					DataRunOffset;			// Starting offset of the Data Runs
 	WORD					CompressionUnitSize;
-	DWORD					Padding;
-	ULONGLONG				AllocatedSize;
-	ULONGLONG				RealSize;
-	ULONGLONG				StreamDataSize;
+	DWORD         Padding;
+	ULONGLONG     AllocatedSize;
+	ULONGLONG     RealSize;
+	ULONGLONG     StreamDataSize;
 }*PMFT_NONRESIDENT_ATTRIBUTE_HDR;
 
 /*
