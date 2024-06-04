@@ -9,12 +9,12 @@ typedef INT64	LCN_t;	/* Logical Cluster Number */
 // File Record Attribute Types
 //
 //--------------------------------------------------------------------------------------
-#define	MFT_FILERECORD_ATTR_STANDARD_INFO			0x10	
-#define	MFT_FILERECORD_ATTR_ATTRIBUTE_LIST			0x20
-#define MFT_FILERECORD_ATTR_FILENAME				0x30
-#define	MFT_FILERECORD_ATTR_OBJECT_ID				0x40
+#define	MFT_FILERECORD_ATTR_STANDARD_INFO           0x10	
+#define	MFT_FILERECORD_ATTR_ATTRIBUTE_LIST          0x20
+#define MFT_FILERECORD_ATTR_FILENAME                0x30
+#define	MFT_FILERECORD_ATTR_OBJECT_ID               0x40
 #define MFT_FILERECORD_ATTR_SECURITY_DESCRIPTOR		0x50
-#define	MFT_FILERECORD_ATTR_VOLUME_NAME				0x60
+#define	MFT_FILERECORD_ATTR_VOLUME_NAME		        0x60
 #define	MFT_FILERECORD_ATTR_VOLUME_INFORMATION		0x70
 #define	MFT_FILERECORD_ATTR_DATA					0x80
 #define	MFT_FILERECORD_ATTR_INDEX_ROOT				0x90
@@ -24,7 +24,7 @@ typedef INT64	LCN_t;	/* Logical Cluster Number */
 #define MFT_FILERECORD_ATTR_EA_INFORMATION			0xD0
 #define	MFT_FILERECORD_ATTR_EA						0xE0
 #define	MFT_FILERECORD_ATTR_LOGGED_UTILITY_STREAM	0x100
-#define	MFT_FILERECORD_ATTR_STOP_TAG				0xFFFFFFFF
+#define	MFT_FILERECORD_ATTR_STOP_TAG		        0xFFFFFFFF
 
 
 //--------------------------------------------------------------------------------------
