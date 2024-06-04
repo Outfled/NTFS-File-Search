@@ -68,23 +68,23 @@ typedef struct MFT_FILE_REFERENCE
 #pragma pack( push, 8 )
 
 /*
-* Resident Attribute Header Layout
+* Non-Resident Attribute Header Layout
 * https://flatcap.github.io/linux-ntfs/ntfs/concepts/attribute_header.html#:~:text=Overview,attribute%20depends%20on%20two%20things.
 */
 typedef struct MFT_NONRESIDENT_ATTRIBUTE_HDR
 {
-	VCN_t					StartVCN;				// Starting Virtual Cluster Number (VCN)
-	VCN_t					LastVCN;				// Last Virtual Cluster Number (VCN)
-	WORD					DataRunOffset;			// Starting offset of the Data Runs
-	WORD					CompressionUnitSize;
-	DWORD         Padding;
-	ULONGLONG     AllocatedSize;
-	ULONGLONG     RealSize;
-	ULONGLONG     StreamDataSize;
+	VCN_t		StartVCN;				// Starting Virtual Cluster Number (VCN)
+	VCN_t		LastVCN;				// Last Virtual Cluster Number (VCN)
+	WORD		DataRunOffset;			// Starting offset of the Data Runs
+	WORD		CompressionUnitSize;
+	DWORD		Padding;
+	ULONGLONG	AllocatedSize;
+	ULONGLONG	RealSize;
+	ULONGLONG	StreamDataSize;
 }*PMFT_NONRESIDENT_ATTRIBUTE_HDR;
 
 /*
-* Non-Resident Attribute Header Layout
+* Resident Attribute Header Layout
 * https://flatcap.github.io/linux-ntfs/ntfs/concepts/attribute_header.html#:~:text=Overview,attribute%20depends%20on%20two%20things.
 */
 typedef struct MFT_RESIDENT_ATTRIBUTE_HDR
@@ -101,13 +101,13 @@ typedef struct MFT_RESIDENT_ATTRIBUTE_HDR
 */
 typedef struct MFT_ATTRIBUTE_HEADER
 {
-	DWORD		Type;			// Attribute Type
-	DWORD		TotalSize;		
-	BYTE		FormCode;	// 0 = Resident 1 = Non resident
-	BYTE		NameLength;		// Attribute name length
-	WORD		NameOffset;		// Attribute name offset
-	WORD		Flags;
-	WORD		AttributeId;	// Unique Id
+	DWORD	Type;			// Attribute Type
+	DWORD	TotalSize;
+	BYTE	FormCode;		// 0 = Resident 1 = Non resident
+	BYTE	NameLength;		// Attribute name length
+	WORD	NameOffset;		// Attribute name offset
+	WORD	Flags;
+	WORD	AttributeId;	// Unique Id
 
 	union
 	{
@@ -115,5 +115,121 @@ typedef struct MFT_ATTRIBUTE_HEADER
 		MFT_NONRESIDENT_ATTRIBUTE_HDR	NonResident;
 	};
 }*PMFT_ATTRIBUTE_HEADER;
+
+#pragma pack(pop)
+#pragma pack( push, 1 )
+
+/*
+* BIOS Parameter Block (BPB)
+* https://en.wikipedia.org/wiki/BIOS_parameter_block
+* https://www.ntfs.com/ntfs-partition-boot-sector.htm
+*/
+typedef struct NTFS_BOOT_SECTOR
+{
+	/* Jump instruction */
+	BYTE Jmp[3];
+
+	/* Signature */
+	BYTE Signature[8];
+
+	//
+	// BPB and extended BPB
+	//
+
+	WORD		BytesPerSector;
+	BYTE		SectorsPerCluster;
+	WORD		ReservedSectors;
+	BYTE		Zeros1[3];
+	WORD		Unused1;
+	BYTE		MediaDescriptor;
+	WORD		Zeros2;
+	WORD		SectorsPerTrack;
+	WORD		NumberOfHeads;
+	DWORD		HiddenSectors;
+	DWORD		Unused2;
+	DWORD		Unused3;
+	ULONGLONG	TotalSectors;
+	ULONGLONG	MFT_LCN;		/* $MFT Logical Cluster Number (LCN) */
+	ULONGLONG	MFTMirr_LCN;	/* $MFTMirr Logical Cluster Number (LCN) */
+	DWORD		ClustersPerFileRecord;
+	DWORD		ClustersPerIndexBlock;
+	BYTE		VolumeSN[8];
+
+	/* Boot Code */
+	BYTE BootCode[430];
+
+	//
+	// 0xAA55
+	//
+
+	BYTE _AA;
+	BYTE _55;
+};
+
+#define MFT_FILE_RECORD_MAGIC	0x454C4946
+
+/*
+* $MFT File Record Header Layout
+* https://flatcap.github.io/linux-ntfs/ntfs/concepts/file_record.html
+*/
+typedef struct MFT_FILE_RECORD_HEADER
+{
+	DWORD		Magic;					// "FILE" (0x454C4946)
+	WORD		UpdateSequenceOffset;	// Update Sequence offset
+	WORD		SizeOfUpdateSequence;	// Size in words of Update Sequence 
+	ULONGLONG	LogSequenceNumber;		// $LogFile Sequence Number (LSN)
+	WORD		SequenceNumber;			// Sequence number
+	WORD		HardLinkCount;			// Hard link count
+	WORD		FirstAttributeOffset;	// First attribute offset
+	WORD		Flags;					
+	DWORD		RealSize;				// Real size of the FILE record
+	DWORD		AllocatedSize;			// Allocated size of the FILE record
+	ULONGLONG	FileReference;			// File reference to the base FILE record
+	WORD		NextAttributeId;		
+	WORD		Align;
+	DWORD		RecordNumber;			// MFT Record Number
+}*PMFT_FILE_RECORD_HEADER;
+
+/* Cluster info of Non-Residental Attributes (Data runs) */
+typedef struct MFT_DATARUN
+{
+	struct
+	{
+		BYTE Length : 4;
+		BYTE Offset : 4;
+	}Sizes;
+
+	UINT64	Length; /* VCN */
+	INT64	Offset; /* LCN */
+}*PMFT_DATARUN;
+
+typedef union MFT_FILE_ID
+{
+	LONGLONG IndexNumber;
+
+	struct
+	{
+		LONGLONG MftRecordIndex : 48;
+		LONGLONG SequenceNumber : 16;
+	};
+}*PMFT_FILE_ID;
+
+/*
+* $MFT Standard Information Attribute
+* http://inform.pucp.edu.pe/~inf232/Ntfs/ntfs_doc_v0.5/attributes/standard_information.html
+*/
+typedef struct MFT_STANDARD_INFORMATION_ATTRIBUTE_HDR
+{
+	LONGLONG	CreationTime;
+	LONGLONG	ChangeTime;
+	LONGLONG	LastWriteTime;
+	LONGLONG	LastAccessTime;
+	ULONG		FileAttributes;
+	ULONG		Unknown[3];
+	ULONG		QuotaId;
+	ULONG		SecurityId;
+	ULONGLONG	QuotaChange;
+	USN			Usn;
+}*PMFT_STANDARD_INFORMATION_ATTRIBUTE_HDR;
 
 #endif //!_NTFS_DEFS_H_
