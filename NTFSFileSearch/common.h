@@ -3,6 +3,8 @@
 #define POINTER_ADD(type, base, offset)                 (type)((PBYTE)base + offset)
 #define POINTER_SUB(base, length)                       ((PBYTE)base - (PBYTE)length)
 
+#define KB_TO_BYTE(kb)		1024 * kb
+#define MB_TO_BYTE(mb)		1024 * 1024 * mb
 
 //----------------------------------
 // Forward declarations
