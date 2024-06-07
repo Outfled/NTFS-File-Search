@@ -14,6 +14,7 @@
 #define FILENAME_NAMESPACE_DOS				(BYTE)2
 #define FILENAME_NAMESPACE_WIN32_AND_DOS	(BYTE)3
 
+
 static inline void CopyFileEntry(PNTFS_FILE_ENTRYW pDestination, PNTFS_FILE_ENTRYW pSource, UINT64 *pnOffset, UINT64 cbTotalSize)
 {
     LPWSTR pFileName = (LPWSTR)(pDestination + 1);
@@ -53,11 +54,11 @@ static inline void CopyFileEntry(PNTFS_FILE_ENTRYA pDestination, PNTFS_FILE_ENTR
 }
 
 
-CNTFSVolumeSearcher::CNTFSVolumeSearcher() : m_pVolume(NULL), m_nFileNameOffset(0)
+CNTFSVolumeSearcher::CNTFSVolumeSearcher() : m_pVolume(NULL), m_nFileNameOffset(0), m_dwFlags(0)
 {
     m_FileNameMemoryPool.Initialize(FILENAME_MEM_POOL_BLOCK_SIZE, FILENAME_MEM_POOL_MAX_BLOCKS);
 }
-CNTFSVolumeSearcher::~CMFTReader()
+CNTFSVolumeSearcher::~CNTFSVolumeSearcher()
 {
     ClearFileFilters();
     m_FileNameMemoryPool.Uninitialize();
@@ -96,7 +97,7 @@ BOOL CNTFSVolumeSearcher::SetVolume(CNTFSVolume *pVolume)
     return TRUE;
 }
 
-BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERAND iOperand, NTFS_FILTER_FACTOR iFactorType, LPCWSTR lpszFilterString)
+BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERATOR fOperator, NTFS_FILTER_FACTOR iFactorType, LPCWSTR lpszFilterString)
 {
     FileFilterData Filter;
 
@@ -104,7 +105,7 @@ BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERAND iOperand, NTFS_FILTE
     {
         return FALSE;
     }
-    if (iFactorType != FF_FACTOR_NAME && iFactorType != FF_FACTOR_NAME_AND_PATH || !lpszFilterString)
+    if (iFactorType != FF_FACTOR_FILENAME && iFactorType != FF_FACTOR_FILENAME_AND_PATH || !lpszFilterString)
     {
         return FALSE;
     }
@@ -120,7 +121,7 @@ BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERAND iOperand, NTFS_FILTE
 BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERATOR fOperator, NTFS_FILTER_FACTOR iFactorType, INT64 ullFilterValue)
 {
     FileFilterData Filter;
-    if ((iFactorType == FF_FACTOR_NAME) && (iFactorType == FF_FACTOR_NAME_AND_PATH))
+    if (iFactorType == FF_FACTOR_FILENAME || iFactorType == FF_FACTOR_FILENAME_AND_PATH)
     {
         return FALSE;
     }
@@ -136,7 +137,7 @@ BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERATOR fOperator, NTFS_FIL
 VOID CNTFSVolumeSearcher::ClearFileFilters()
 {
     for (int i = 0; i < m_rgFilters.size(); ++i) {
-        if (m_rgFilters[i].fFactorType == FF_FACTOR_NAME || m_rgFilters[i].fFactorType == FF_FACTOR_NAME_AND_PATH) {
+        if (m_rgFilters[i].fFactorType == FF_FACTOR_FILENAME || m_rgFilters[i].fFactorType == FF_FACTOR_FILENAME_AND_PATH) {
             free((LPWSTR)m_rgFilters[i].lpszFilterValue);
         }
     }
@@ -188,6 +189,7 @@ BOOL CNTFSVolumeSearcher::FindFilesW(DWORD dwFindFlags, PNTFS_FILE_ENTRYW *ppFil
 
     /* Commit first file name memory block */
     m_FileNameMemoryPool.CommitNextMemoryBlock();
+    m_nFileNameOffset = 0;
 
     /* Enumerate the data runs */
 	for (size_t i = 0; i < m_rgDataRuns.size(); ++i)
@@ -397,6 +399,17 @@ VOID CNTFSVolumeSearcher::FreeFileEntries(PNTFS_FILE_ENTRYW pFileEntries)
     }
 }
 
+BOOL CNTFSVolumeSearcher::SetFlags(DWORD dwFlags)
+{
+    if (!(dwFlags & FILE_SEARCH_FLAG_FIND_FILES) && !(dwFlags & FILE_SEARCH_FLAG_FIND_DIRECTORIES))
+    {
+        return FALSE;
+    }
+
+    m_dwFlags = dwFlags;
+    return TRUE;
+}
+
 VOID CNTFSVolumeSearcher::ParseRecordChunk(DWORD dwFindFlags, PBYTE pbRecordChunk, UINT64 cbRecordChunk)
 {
 	for (UINT64 iRecord = 0; iRecord < cbRecordChunk / m_pVolume->RecordSize(); ++iRecord)
@@ -519,7 +532,7 @@ inline BOOL CNTFSVolumeSearcher::CheckFileCriteria(PNTFS_FILE_ENTRYW pEntry, BOO
 {
     for (size_t i = 0; i < m_rgFilters.size(); ++i)
     {
-              INT64   iOperandValue;
+        INT64   iOperandValue;
         BOOL    bValid;
 
         bValid = TRUE;
@@ -527,7 +540,7 @@ inline BOOL CNTFSVolumeSearcher::CheckFileCriteria(PNTFS_FILE_ENTRYW pEntry, BOO
         auto Filter = m_rgFilters[i];
         switch (Filter.fFactorType)
         {
-        case FF_FACTOR_NAME_AND_PATH:
+        case FF_FACTOR_FILENAME_AND_PATH:
             if (!bFinalPath)
             {
                 if (Filter.fOperator == FF_OPERATOR_EQUAL && (wcscmp(PathFindFileName(Filter.lpszFilterValue), pEntry->lpszFileName) != 0)) {
@@ -540,7 +553,7 @@ inline BOOL CNTFSVolumeSearcher::CheckFileCriteria(PNTFS_FILE_ENTRYW pEntry, BOO
                 continue;
             }
 
-        case FF_FACTOR_NAME:
+        case FF_FACTOR_FILENAME:
             if (Filter.fOperator == FF_OPERATOR_EQUAL && (wcscmp(Filter.lpszFilterValue, PathFindFileName(pEntry->lpszFileName)) != 0)) {
                 return FALSE;
             }
@@ -550,7 +563,7 @@ inline BOOL CNTFSVolumeSearcher::CheckFileCriteria(PNTFS_FILE_ENTRYW pEntry, BOO
 
             continue;
 
-        case FF_FACTOR_SIZE:
+        case FF_FACTOR_FILE_SIZE:
             iOperandValue = pEntry->AllocatedFileSize;
             break;
         case FF_FACTOR_RECORD_NUMBER:
@@ -593,7 +606,7 @@ inline BOOL CNTFSVolumeSearcher::CheckFileCriteria(PNTFS_FILE_ENTRYW pEntry, BOO
     return TRUE;
 }
 
-VOID CNTFSVolumeSearcher::UpdateFileRecordMapDirectoryNames(NTFSDirectoryMap &mpDirectoryMap)
+VOID CNTFSVolumeSearcher::UpdateFileRecordMapDirectoryNames(NTFSFileMap &mpDirectoryMap)
 {
     using namespace std;
     vector<UINT64> rgEraseRecords;
@@ -754,7 +767,7 @@ VOID CNTFSVolumeSearcher::UpdateFileRecordMapDirectoryNames(NTFSDirectoryMap &mp
     }
 }
 
-VOID CNTFSVolumeSearcher::UpdateFileRecordMapFileNames(NTFSFileMap &mpFileMap, NTFSDirectoryMap mpDirectoryMap)
+VOID CNTFSVolumeSearcher::UpdateFileRecordMapFileNames(NTFSFileMap &mpFileMap, NTFSFileMap mpDirectoryMap)
 {
     std::vector<UINT64> rgEraseRecords;
 
