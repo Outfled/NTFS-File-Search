@@ -16,17 +16,13 @@ private:
 	LPWSTR				m_lpszVolumeRoot;
 
 public:
-	CNTFSVolume(LPCWSTR lpszVolumeName);
+	CNTFSVolume();
 
-	~CNTFSVolume()
-	{
-		if (m_hVolume != INVALID_HANDLE_VALUE) {
-			CloseHandle(m_hVolume);
-		}
-		if (m_lpszVolumeRoot) {
-			LocalFree(m_lpszVolumeRoot);
-		}
-	}
+	~CNTFSVolume();
+
+	BOOL Open(LPCWSTR lpszVolumeName);
+
+	BOOL Close();
 
 	BOOL Seek(UINT64 ullAbsoluteOffset)
 	{
