@@ -16,8 +16,8 @@ private:
 	/* Basic File Search Filter */
 	struct FileFilterData
 	{
-		NTFS_FILTER_OPERAND fOperand;
-		NTFS_FILTER_FACTOR	fFactorType;
+		NTFS_FILTER_OPERATOR	fOperator;
+		NTFS_FILTER_FACTOR 		fFactorType;
 		union
 		{
 			LPCWSTR lpszFilterValue;
@@ -40,9 +40,9 @@ public:
 
 	BOOL SetVolume(CNTFSVolume *pVolume);
 
-	BOOL AddFileFilter(NTFS_FILTER_OPERAND iOperand, NTFS_FILTER_FACTOR iFactorType, LPCWSTR lpszFilterString);
+	BOOL AddFileFilter(NTFS_FILTER_OPERATOR fOperator, NTFS_FILTER_FACTOR iFactorType, LPCWSTR lpszFilterString);
 
-	BOOL AddFileFilter(NTFS_FILTER_OPERAND iOperand, NTFS_FILTER_FACTOR iFactorType, INT64 llFilterValue);
+	BOOL AddFileFilter(NTFS_FILTER_OPERATOR fOperator, NTFS_FILTER_FACTOR iFactorType, INT64 llFilterValue);
 
 	VOID ClearFileFilters();
 
