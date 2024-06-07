@@ -100,7 +100,7 @@ BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERAND iOperand, NTFS_FILTE
 {
     FileFilterData Filter;
 
-    if (iOperand != FF_OPERAND_EQUAL && iOperand != FF_OPERAND_NOT_EQUAL)
+    if (fOperator != FF_OPERATOR_EQUAL && fOperator != FF_OPERATOR_NOT_EQUAL)
     {
         return FALSE;
     }
@@ -109,7 +109,7 @@ BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERAND iOperand, NTFS_FILTE
         return FALSE;
     }
 
-    Filter.fOperand         = iOperand;
+    Filter.fOperator        = fOperator;
     Filter.fFactorType      = iFactorType;
     Filter.lpszFilterValue  = _wcsdup(lpszFilterString);
 
@@ -117,7 +117,7 @@ BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERAND iOperand, NTFS_FILTE
     return TRUE;
 }
 
-BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERAND iOperand, NTFS_FILTER_FACTOR iFactorType, INT64 ullFilterValue)
+BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERATOR fOperator, NTFS_FILTER_FACTOR iFactorType, INT64 ullFilterValue)
 {
     FileFilterData Filter;
     if ((iFactorType == FF_FACTOR_NAME) && (iFactorType == FF_FACTOR_NAME_AND_PATH))
@@ -125,7 +125,7 @@ BOOL CNTFSVolumeSearcher::AddFileFilter(NTFS_FILTER_OPERAND iOperand, NTFS_FILTE
         return FALSE;
     }
 
-    Filter.fOperand         = iOperand;
+    Filter.fOperator        = fOperator;
     Filter.fFactorType      = iFactorType;
     Filter.llFilterValue    = ullFilterValue;
 
@@ -519,7 +519,7 @@ inline BOOL CNTFSVolumeSearcher::CheckFileCriteria(PNTFS_FILE_ENTRYW pEntry, BOO
 {
     for (size_t i = 0; i < m_rgFilters.size(); ++i)
     {
-        INT64   iOperatorValue;
+              INT64   iOperandValue;
         BOOL    bValid;
 
         bValid = TRUE;
@@ -530,10 +530,10 @@ inline BOOL CNTFSVolumeSearcher::CheckFileCriteria(PNTFS_FILE_ENTRYW pEntry, BOO
         case FF_FACTOR_NAME_AND_PATH:
             if (!bFinalPath)
             {
-                if (Filter.fOperand == FF_OPERAND_EQUAL && (wcscmp(PathFindFileName(Filter.lpszFilterValue), pEntry->lpszFileName) != 0)) {
+                if (Filter.fOperator == FF_OPERATOR_EQUAL && (wcscmp(PathFindFileName(Filter.lpszFilterValue), pEntry->lpszFileName) != 0)) {
                     return FALSE;
                 }
-                else if (Filter.fFactorType == FF_OPERAND_NOT_EQUAL && !(wcscmp(PathFindFileName(Filter.lpszFilterValue), pEntry->lpszFileName) == 0)) {
+                else if (Filter.fFactorType == FF_OPERATOR_NOT_EQUAL && !(wcscmp(PathFindFileName(Filter.lpszFilterValue), pEntry->lpszFileName) == 0)) {
                     return FALSE;
                 }
 
@@ -541,48 +541,48 @@ inline BOOL CNTFSVolumeSearcher::CheckFileCriteria(PNTFS_FILE_ENTRYW pEntry, BOO
             }
 
         case FF_FACTOR_NAME:
-            if (Filter.fOperand == FF_OPERAND_EQUAL && (wcscmp(Filter.lpszFilterValue, PathFindFileName(pEntry->lpszFileName)) != 0)) {
+            if (Filter.fOperator == FF_OPERATOR_EQUAL && (wcscmp(Filter.lpszFilterValue, PathFindFileName(pEntry->lpszFileName)) != 0)) {
                 return FALSE;
             }
-            else if (Filter.fFactorType == FF_OPERAND_NOT_EQUAL && !(wcscmp(Filter.lpszFilterValue, PathFindFileName(pEntry->lpszFileName)) == 0)) {
+            else if (Filter.fFactorType == FF_OPERATOR_NOT_EQUAL && !(wcscmp(Filter.lpszFilterValue, PathFindFileName(pEntry->lpszFileName)) == 0)) {
                 return FALSE;
             }
 
             continue;
 
         case FF_FACTOR_SIZE:
-            iOperatorValue = pEntry->AllocatedFileSize;
+            iOperandValue = pEntry->AllocatedFileSize;
             break;
         case FF_FACTOR_RECORD_NUMBER:
-            iOperatorValue = pEntry->MFTFileId.MftRecordIndex;
+            iOperandValue = pEntry->MFTFileId.MftRecordIndex;
             break;
         case FF_FACTOR_PARENT_RECORD_NUMER:
-            iOperatorValue = pEntry->ParentDirectoryRecord;
+            iOperandValue = pEntry->ParentDirectoryRecord;
             break;
         default:
             continue;
         }
 
         /* Arithmetic operations */
-        switch (Filter.fOperand)
+        switch (Filter.fOperator)
         {
-        case FF_OPERAND_EQUAL:
-            bValid = (iOperatorValue == Filter.llFilterValue) ? TRUE : FALSE;
+        case FF_OPERATOR_EQUAL:
+            bValid = (iOperandValue == Filter.llFilterValue) ? TRUE : FALSE;
             break;
-        case FF_OPERAND_NOT_EQUAL:
-            bValid = (iOperatorValue != Filter.llFilterValue) ? TRUE : FALSE;
+        case FF_OPERATOR_NOT_EQUAL:
+            bValid = (iOperandValue != Filter.llFilterValue) ? TRUE : FALSE;
             break;
-        case FF_OPERAND_GREATER_THAN:
-            bValid = (iOperatorValue > Filter.llFilterValue) ? TRUE : FALSE;
+        case FF_OPERATOR_GREATER_THAN:
+            bValid = (iOperandValue > Filter.llFilterValue) ? TRUE : FALSE;
             break;
-        case FF_OPERAND_GREATER_THAN_OR_EQ:
-            bValid = (iOperatorValue >= Filter.llFilterValue) ? TRUE : FALSE;
+        case FF_OPERATOR_GREATER_THAN_OR_EQ:
+            bValid = (iOperandValue >= Filter.llFilterValue) ? TRUE : FALSE;
             break;
-        case FF_OPERAND_LESS_THAN:
-            bValid = (iOperatorValue < Filter.llFilterValue) ? TRUE : FALSE;
+        case FF_OPERATOR_LESS_THAN:
+            bValid = (iOperandValue < Filter.llFilterValue) ? TRUE : FALSE;
             break;
-        case FF_OPERAND_LESS_THAN_OR_EQ:
-            bValid = (iOperatorValue <= Filter.llFilterValue) ? TRUE : FALSE;
+        case FF_OPERATOR_LESS_THAN_OR_EQ:
+            bValid = (iOperandValue <= Filter.llFilterValue) ? TRUE : FALSE;
             break;
         }
         if (!bValid) {
