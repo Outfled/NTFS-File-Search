@@ -4,13 +4,14 @@
 #pragma once
 
 #include <Windows.h>
-#include "ntfs_defs.h"
+#include <Shlwapi.h>
 
 #include <string>
 #include <vector>
+#include <map>
 #include <unordered_map>
-//#include <map>
 
+#include "ntfs_defs.h"
 #include "common.h"
 
-#endif _PCH_H_
+#endif //!_PCH_H_
