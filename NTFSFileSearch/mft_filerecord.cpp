@@ -1,6 +1,12 @@
 #include "pch.h"
 #include "mft_filerecord.h"
 
+#define MFT_RESIDENT_ATTR(p)			p->Resident
+#define MFT_RESIDENT_ATTR_PTR(p)		POINTER_ADD(PMFT_RESIDENT_ATTRIBUTE_HDR, p, 0);
+#define MFT_NONRESIDENT_ATTR(p)			p->NonResident
+#define MFT_NONRESIDENT_ATTR_PTR(p)		POINTER_ADD(PMFT_NONRESIDENT_ATTRIBUTE_HDR, p, 0);
+
+
 CMFTFileRecord::CMFTFileRecord(CNTFSVolume *pVolume, PMFT_FILE_RECORD_HEADER pFileRecord) :
 	m_pVolume(pVolume),
 	m_pFileRecord(pFileRecord)
