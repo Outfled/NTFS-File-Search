@@ -5,12 +5,14 @@
 
 #define KB_TO_BYTE(kb)		1024 * kb
 #define MB_TO_BYTE(mb)		1024 * 1024 * mb
+#define GB_TO_BYTE(gb)		gb * 1024 * 1024 * 1024
+
 
 //----------------------------------
 // Forward declarations
 
 class	CNTFSVolume;
-class	CMFTReader;
+class	CNTFSVolumeSearcher;
 class	CMFTFileRecord;
 
 
@@ -25,9 +27,9 @@ typedef enum NTFS_FILTER_OPERATOR
 };
 typedef enum NTFS_FILTER_FACTOR
 {
-	FF_FACTOR_NAME,					// Requires FF_OPERAND_EQUAL or FF_OPERAND_NOT_EQUAL operator
-	FF_FACTOR_NAME_AND_PATH,		// Requires FF_OPERAND_EQUAL or FF_OPERAND_NOT_EQUAL operator
-	FF_FACTOR_SIZE,					// Any operator
+	FF_FACTOR_FILENAME,				// Requires FF_OPERAND_EQUAL or FF_OPERAND_NOT_EQUAL operator
+	FF_FACTOR_FILENAME_AND_PATH,	// Requires FF_OPERAND_EQUAL or FF_OPERAND_NOT_EQUAL operator
+	FF_FACTOR_FILE_SIZE,			// Any operator
 	FF_FACTOR_RECORD_NUMBER,		// Any operator
 	FF_FACTOR_PARENT_RECORD_NUMER	// Any operator
 };
@@ -68,7 +70,14 @@ typedef std::vector<MFT_DATARUN>						MFTDataRunList;
 
 typedef UINT64			FileMapKey_t;
 typedef NTFS_FILE_ENTRY FileMapValue_t;
-typedef std::unordered_map<FileMapKey_t, FileMapValue_t> NTFSFileMap; /* File/directory entry map */
+
+/* File/directory entry map */
+#ifdef NTFS_UNORDERED_FILE_MAPPING
+typedef std::unordered_map<FileMapKey_t, FileMapValue_t>	NTFSFileMap;
+#else
+typedef std::map<FileMapKey_t, FileMapValue_t>				NTFSFileMap;
+#endif //NTFS_UNORDERED_FILE_MAPPING
+
 
 class CMemoryPool
 {
