@@ -4,6 +4,7 @@
 typedef UINT64	VCN_t;	/* Virtual Cluster Number */
 typedef INT64	LCN_t;	/* Logical Cluster Number */
 
+
 //--------------------------------------------------------------------------------------
 //
 // File Record Attribute Types
@@ -65,7 +66,18 @@ typedef struct MFT_FILE_REFERENCE
 	WORD	SegmentNumber;
 }*PMFT_FILE_REFERENCE;
 
-#pragma pack( push, 8 )
+#pragma pack( push, 1 )
+
+typedef union MFT_FILE_ID
+{
+	LONGLONG IndexNumber;
+
+	struct
+	{
+		LONGLONG MftRecordIndex : 48;
+		LONGLONG SequenceNumber : 16;
+	};
+}*PMFT_FILE_ID;
 
 /*
 * Non-Resident Attribute Header Layout
@@ -116,8 +128,6 @@ typedef struct MFT_ATTRIBUTE_HEADER
 	};
 }*PMFT_ATTRIBUTE_HEADER;
 
-#pragma pack(pop)
-#pragma pack( push, 1 )
 
 /*
 * BIOS Parameter Block (BPB)
@@ -194,14 +204,8 @@ typedef struct MFT_FILE_RECORD_HEADER
 /* Cluster info of Non-Residental Attributes (Data runs) */
 typedef struct MFT_DATARUN
 {
-	struct
-	{
-		BYTE Length : 4;
-		BYTE Offset : 4;
-	}Sizes;
-
-	UINT64	Length; /* VCN */
-	INT64	Offset; /* LCN */
+	UINT64	Length;
+	INT64	Offset;
 }*PMFT_DATARUN;
 
 /*
@@ -222,15 +226,29 @@ typedef struct MFT_STANDARD_INFORMATION_ATTRIBUTE_HDR
 	USN			Usn;
 }*PMFT_STANDARD_INFORMATION_ATTRIBUTE_HDR;
 
-typedef union MFT_FILE_ID
+/*
+* $FILE_NAME Attribute Header Layout
+* https://flatcap.github.io/linux-ntfs/ntfs/attributes/file_name.html
+*/
+typedef struct MFT_FILENAME_ATTRIBUTE_HDR
 {
-	LONGLONG IndexNumber;
+	MFT_FILE_ID	ParentReference;	// File reference to the parent directory
+	ULONGLONG	CreationTime;		// File creation time
+	ULONGLONG	ModiciationTime;	// File altered time
+	ULONGLONG	MFTTime;			// MFT changed time
+	ULONGLONG	ReadTime;			// File read time
+	ULONGLONG	AllocatedSize;		// Allocated size of the file
+	ULONGLONG	RealSize;			// Real size of the file
+	DWORD		Flags;				// Flags
+	DWORD		ER;
+	BYTE		NameLength;			// Filename length in characters
+	BYTE		NameSpaceType;		// File namespace type
+	WCHAR		Name[1];			// Filename
+}*PMFT_FILENAME_ATTRIBUTE_HDR;
 
-	struct
-	{
-		LONGLONG MftRecordIndex : 48;
-		LONGLONG SequenceNumber : 16;
-	};
-}*PMFT_FILE_ID;
+#pragma pack( pop )
+
+/* $MFT Logical Cluster Number (Absolute offset of $MFT on the volume) */
+#define $MFT_LCN(bootSector)	(UINT64)(bootSector.MFT_LCN * bootSector.BytesPerSector * bootSector.SectorsPerCluster)
 
 #endif //!_NTFS_DEFS_H_
