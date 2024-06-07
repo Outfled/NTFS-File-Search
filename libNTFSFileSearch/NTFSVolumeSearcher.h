@@ -27,7 +27,6 @@ private:
 
 	CNTFSVolume					*m_pVolume;
 	std::vector<FileFilterData>	m_rgFilters;
-	_MemoryBuffer				m_FileRecordBuffer;
 	CMemoryPool					m_FileNameMemoryPool;
 	UINT64						m_nFileNameOffset;
 	MFTDataRunList				m_rgDataRuns;
